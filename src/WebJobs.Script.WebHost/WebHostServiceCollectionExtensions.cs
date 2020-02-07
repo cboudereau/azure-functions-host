@@ -193,8 +193,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost
                     return new LinuxContainerMetricsPublisher(environment, standbyOptions, logger, hostNameProvider);
                 }
 
-                var nullMetricsLogger = s.GetService<ILogger<NullMetricsPublisher>>();
-                return new NullMetricsPublisher(nullMetricsLogger);
+                return NullMetricsPublisher.Instance;
             });
         }
 
