@@ -15,6 +15,7 @@ using Microsoft.Azure.WebJobs.Host.Executors;
 using Microsoft.Azure.WebJobs.Script.Config;
 using Microsoft.Azure.WebJobs.Script.WebHost;
 using Microsoft.Azure.WebJobs.Script.WebHost.Management;
+using Microsoft.Azure.WebJobs.Script.Workers.Http;
 using Microsoft.Azure.WebJobs.Script.Workers.Rpc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -59,6 +60,12 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Managment
                 LogPath = @"x:\tmp\log",
                 SecretsPath = @"x:\secrets",
                 TestDataPath = @"x:\sampledata"
+            };
+
+            var jobHostOptions = new ScriptJobHostOptions
+            {
+                RootScriptPath = _hostOptions.ScriptPath,
+                RootLogPath = _hostOptions.LogPath
             };
 
             string testHostName = "appName.azurewebsites.net";
@@ -121,7 +128,8 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Managment
             _hostNameProvider = new HostNameProvider(_mockEnvironment.Object);
 
             var functionMetadataProvider = new FunctionMetadataProvider(optionsMonitor, new OptionsWrapper<LanguageWorkerOptions>(CreateLanguageWorkerConfigSettings()), NullLogger<FunctionMetadataProvider>.Instance, new TestMetricsLogger());
-            _functionsSyncManager = new FunctionsSyncManager(configuration, hostIdProviderMock.Object, optionsMonitor, loggerFactory.CreateLogger<FunctionsSyncManager>(), httpClient, secretManagerProviderMock.Object, _mockWebHostEnvironment.Object, _mockEnvironment.Object, _hostNameProvider, functionMetadataProvider);
+            var functionMetadataManager = new FunctionMetadataManager(new OptionsWrapper<ScriptJobHostOptions>(jobHostOptions), functionMetadataProvider, null, new OptionsWrapper<HttpWorkerOptions>(new HttpWorkerOptions()), new Mock<IScriptHostManager>().Object, loggerFactory);
+            _functionsSyncManager = new FunctionsSyncManager(configuration, hostIdProviderMock.Object, optionsMonitor, loggerFactory.CreateLogger<FunctionsSyncManager>(), httpClient, secretManagerProviderMock.Object, _mockWebHostEnvironment.Object, _mockEnvironment.Object, _hostNameProvider, functionMetadataManager);
         }
 
         private string GetExpectedSyncTriggersPayload(string postedConnection = DefaultTestConnection, string postedTaskHub = DefaultTestTaskHub)
