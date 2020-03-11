@@ -157,7 +157,7 @@ namespace Microsoft.Azure.WebJobs.Script
         {
             foreach (var provider in _functionProviders)
             {
-                provider.FunctionErrors?.ToList().ForEach(kvp => _functionErrors[kvp.Key] = kvp.Value);
+                provider.FunctionErrors?.ToList().ForEach(kvp => _functionErrors[kvp.Key] = kvp.Value.ToList());
             }
         }
     }
