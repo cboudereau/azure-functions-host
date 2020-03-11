@@ -24,10 +24,11 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Integration.WebHostEndToEnd
     {
         private TestFunctionHost _host;
 
+
         [Theory]
         [InlineData("Node", "node", "HttpTrigger")]
         [InlineData("NoFunction", "node", null)]
-        public async Task CodelessFunction_Invokes_HttpTrigger(string path, string workerRuntime, string whiteList)
+        public async Task CodelessFunction_Invokes_HttpTrigger(string path, string workerRuntime, string allowedList)
         {
             var sourceFunctionApp = Path.Combine(Environment.CurrentDirectory, "TestScripts", path);
             Environment.SetEnvironmentVariable(RpcWorkerConstants.FunctionWorkerRuntimeSettingName, workerRuntime);
@@ -39,7 +40,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Integration.WebHostEndToEnd
                 var metadata = new List<FunctionMetadata>() { CodelessEndToEndTests_Data.GetSampleMetadata("testFn") };
                 var provider = new TestCodelessFunctionProvider(metadata, null);
 
-                var functions = whiteList != null ? new[] { whiteList, "testFn" } : null;
+                var functions = allowedList != null ? new[] { allowedList, "testFn" } : null;
                 StartLocalHost(baseTestPath, sourceFunctionApp, functions, new List<IFunctionProvider>() { provider });
 
                 // Make sure unauthorized does not work
@@ -57,10 +58,10 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Integration.WebHostEndToEnd
                 Assert.Equal("Hello, Ankit! Codeless Provider ran a function successfully.", await responseName.Content.ReadAsStringAsync());
 
                 // Regular functions should work as expected
-                if (whiteList != null)
+                if (allowedList != null)
                 {
-                    string key = await _host.GetFunctionSecretAsync(whiteList);
-                    var notCodeless = await _host.HttpClient.GetAsync($"http://localhost/api/{whiteList}?code={key}");
+                    string key = await _host.GetFunctionSecretAsync(allowedList);
+                    var notCodeless = await _host.HttpClient.GetAsync($"http://localhost/api/{allowedList}?code={key}");
                     Assert.Equal(HttpStatusCode.OK, notCodeless.StatusCode);
                 }
             }
@@ -69,7 +70,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Integration.WebHostEndToEnd
         [Theory]
         [InlineData("Node", "node", "HttpTrigger")]
         [InlineData("NoFunction", "node", null)]
-        public async Task CodelessFunction_Honors_WhiteList(string path, string workerRuntime, string whiteList)
+        public async Task CodelessFunction_Honors_allowedList(string path, string workerRuntime, string allowedList)
         {
             var sourceFunctionApp = Path.Combine(Environment.CurrentDirectory, "TestScripts", path);
             Environment.SetEnvironmentVariable(RpcWorkerConstants.FunctionWorkerRuntimeSettingName, workerRuntime);
@@ -81,7 +82,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Integration.WebHostEndToEnd
                 var metadata = new List<FunctionMetadata>() { CodelessEndToEndTests_Data.GetSampleMetadata("testFn1"), CodelessEndToEndTests_Data.GetSampleMetadata("testFn2") };
                 var provider = new TestCodelessFunctionProvider(metadata, null);
 
-                var functions = whiteList != null ? new[] { "testFn2", whiteList } : new[] { "testFn2" };
+                var functions = allowedList != null ? new[] { "testFn2", allowedList } : new[] { "testFn2" };
                 StartLocalHost(baseTestPath, sourceFunctionApp, functions, new List<IFunctionProvider>() { provider });
 
                 // Make sure unauthorized does not work
@@ -99,10 +100,10 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Integration.WebHostEndToEnd
                 Assert.Equal("Hello, Ankit! Codeless Provider ran a function successfully.", await test2.Content.ReadAsStringAsync());
 
                 // Regular functions should work as expected
-                if (whiteList != null)
+                if (allowedList != null)
                 {
-                    string key = await _host.GetFunctionSecretAsync(whiteList);
-                    var notCodeless = await _host.HttpClient.GetAsync($"http://localhost/api/{whiteList}?code={key}");
+                    string key = await _host.GetFunctionSecretAsync(allowedList);
+                    var notCodeless = await _host.HttpClient.GetAsync($"http://localhost/api/{allowedList}?code={key}");
                     Assert.Equal(HttpStatusCode.OK, notCodeless.StatusCode);
                 }
             }
@@ -111,7 +112,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Integration.WebHostEndToEnd
         [Theory]
         [InlineData("Node", "node", "HttpTrigger")]
         [InlineData("NoFunction", "node", null)]
-        public async Task CodelessFunction_CanUse_MultipleProviders(string path, string workerRuntime, string whiteList)
+        public async Task CodelessFunction_CanUse_MultipleProviders(string path, string workerRuntime, string allowedList)
         {
             var sourceFunctionApp = Path.Combine(Environment.CurrentDirectory, "TestScripts", path);
             Environment.SetEnvironmentVariable(RpcWorkerConstants.FunctionWorkerRuntimeSettingName, workerRuntime);
@@ -126,7 +127,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Integration.WebHostEndToEnd
                 var providerOne = new TestCodelessFunctionProvider(metadataList1, null);
                 var providerTwo = new TestCodelessFunctionProvider(metadataList2, null);
 
-                var functions = whiteList != null ? new[] { whiteList, "testFn2", "testFn1" } : null;
+                var functions = allowedList != null ? new[] { allowedList, "testFn2", "testFn1" } : null;
                 StartLocalHost(baseTestPath, sourceFunctionApp, functions, new List<IFunctionProvider>() { providerOne, providerTwo });
 
                 var testFn1Key = await _host.GetFunctionSecretAsync("testFn1");
@@ -141,20 +142,21 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Integration.WebHostEndToEnd
                 Assert.Equal("Hello, Ankit! Codeless Provider ran a function successfully.", await test2.Content.ReadAsStringAsync());
 
                 // Regular functions should work as expected
-                if (whiteList != null)
+                if (allowedList != null)
                 {
-                    string key = await _host.GetFunctionSecretAsync(whiteList);
-                    var notCodeless = await _host.HttpClient.GetAsync($"http://localhost/api/{whiteList}?code={key}");
+                    string key = await _host.GetFunctionSecretAsync(allowedList);
+                    var notCodeless = await _host.HttpClient.GetAsync($"http://localhost/api/{allowedList}?code={key}");
                     Assert.Equal(HttpStatusCode.OK, notCodeless.StatusCode);
                 }
             }
         }
 
         [Theory]
-        [InlineData("Node", "node", "HttpTrigger", 1)]
+        [InlineData("Node", "node", "HttpTrigger", 33)]
         [InlineData("NoFunction", "node", null, 0)]
-        public async Task CodelessFunction_DoesNot_ListFunctions(string path, string workerRuntime, string whiteList, int listCount)
+        public async Task CodelessFunction_DoesNot_ListFunctions(string path, string workerRuntime, string allowedList, int listCount)
         {
+            // Note: admin/functions call includes all functions, regardless of the allowed list (whitelist)
             var sourceFunctionApp = Path.Combine(Environment.CurrentDirectory, "TestScripts", path);
             Environment.SetEnvironmentVariable(RpcWorkerConstants.FunctionWorkerRuntimeSettingName, workerRuntime);
 
@@ -168,7 +170,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Integration.WebHostEndToEnd
                 var providerOne = new TestCodelessFunctionProvider(metadataList1, null);
                 var providerTwo = new TestCodelessFunctionProvider(metadataList2, null);
 
-                var functions = whiteList != null ? new[] { whiteList, "testFn2", "testFn1" } : null;
+                var functions = allowedList != null ? new[] { allowedList, "testFn2", "testFn1" } : null;
                 StartLocalHost(baseTestPath, sourceFunctionApp, functions, new List<IFunctionProvider>() { providerOne, providerTwo });
 
                 var masterKey = await _host.GetMasterKeyAsync();
@@ -188,7 +190,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Integration.WebHostEndToEnd
         [Theory]
         [InlineData("Node", "node", "HttpTrigger")]
         [InlineData("NoFunction", "node", null)]
-        public async Task CodelessFunction_SyncTrigger_Succeeds(string path, string workerRuntime, string whiteList)
+        public async Task CodelessFunction_SyncTrigger_Succeeds(string path, string workerRuntime, string allowedList)
         {
             var sourceFunctionApp = Path.Combine(Environment.CurrentDirectory, "TestScripts", path);
             Environment.SetEnvironmentVariable(RpcWorkerConstants.FunctionWorkerRuntimeSettingName, workerRuntime);
@@ -203,7 +205,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Integration.WebHostEndToEnd
                 var providerOne = new TestCodelessFunctionProvider(metadataList1, null);
                 var providerTwo = new TestCodelessFunctionProvider(metadataList2, null);
 
-                var functions = whiteList != null ? new[] { whiteList, "testFn2", "testFn1" } : null;
+                var functions = allowedList != null ? new[] { allowedList, "testFn2", "testFn1" } : null;
                 StartLocalHost(baseTestPath, sourceFunctionApp, functions, new List<IFunctionProvider>() { providerOne, providerTwo });
 
                 // Sanity check for sync triggers
@@ -215,7 +217,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Integration.WebHostEndToEnd
             }
         }
 
-        private void StartLocalHost(string baseTestPath, string sourceFunctionApp, string[] whitelist, IList<IFunctionProvider> providers)
+        private void StartLocalHost(string baseTestPath, string sourceFunctionApp, string[] allowedList, IList<IFunctionProvider> providers)
         {
             string appContent = Path.Combine(baseTestPath, "FunctionApp");
             string testLogPath = Path.Combine(baseTestPath, "Logs");
@@ -232,11 +234,11 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Integration.WebHostEndToEnd
                         builder.Services.AddSingleton(provider);
                     }
 
-                    if (whitelist != null && whitelist.Length != 0)
+                    if (allowedList != null && allowedList.Length != 0)
                     {
                         builder.Services.Configure<ScriptJobHostOptions>(o =>
                         {
-                            o.Functions = whitelist;
+                            o.Functions = allowedList;
                         });
                     }
                 },

@@ -60,9 +60,8 @@ namespace Microsoft.Azure.WebJobs.Script.Tests
 
             FunctionMetadataManager testFunctionMetadataManager = new FunctionMetadataManager(new OptionsWrapper<ScriptJobHostOptions>(_scriptJobHostOptions),
                 mockFunctionMetadataProvider.Object, new List<IFunctionProvider>(), new OptionsWrapper<HttpWorkerOptions>(_defaultHttpWorkerOptions), new Mock<IScriptHostManager>().Object, MockNullLoggerFactory.CreateLoggerFactory());
-
-            var validatedFunctionMetadataArray = testFunctionMetadataManager.LoadFunctionMetadata();
-            Assert.Empty(validatedFunctionMetadataArray);
+            testFunctionMetadataManager.LoadFunctionMetadata();
+            Assert.Empty(testFunctionMetadataManager.GetLoadedMetadata(false));
 
             Assert.True(testFunctionMetadataManager.Errors.Count == 1);
             ImmutableArray<string> functionErrors = testFunctionMetadataManager.Errors["testFunction"];

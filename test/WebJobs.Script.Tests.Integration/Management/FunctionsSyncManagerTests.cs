@@ -32,6 +32,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Managment
     {
         private const string DefaultTestTaskHub = "TestHubValue";
         private const string DefaultTestConnection = "DurableStorage";
+        private const string SyncManagerLogCategory = "Microsoft.Azure.WebJobs.Script.WebHost.Management.FunctionsSyncManager";
 
         private readonly string _testRootScriptPath;
         private readonly string _testHostConfigFilePath;
@@ -263,7 +264,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Managment
             Assert.Equal("aaa", (string)function1Secrets["secrets"]["TestFunctionKey1"]);
             Assert.Equal("bbb", (string)function1Secrets["secrets"]["TestFunctionKey2"]);
 
-            var logs = _loggerProvider.GetAllLogMessages();
+            var logs = _loggerProvider.GetAllLogMessages().Where(m => m.Category.Equals(SyncManagerLogCategory)).ToList();
             var log = logs[0];
             int startIdx = log.FormattedMessage.IndexOf("Content=") + 8;
             int endIdx = log.FormattedMessage.LastIndexOf(')');
@@ -280,7 +281,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Managment
             var triggers = JArray.Parse(_contentBuilder.ToString());
             Assert.Equal(expectedSyncTriggersPayload, triggers.ToString(Formatting.None));
 
-            var logs = _loggerProvider.GetAllLogMessages();
+            var logs = _loggerProvider.GetAllLogMessages().Where(m => m.Category.Equals(SyncManagerLogCategory)).ToList();
             var log = logs[0];
             int startIdx = log.FormattedMessage.IndexOf("Content=") + 8;
             int endIdx = log.FormattedMessage.LastIndexOf(')');
@@ -301,7 +302,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Managment
                 Assert.True(syncResult.Success);
                 Assert.Null(syncResult.Error);
 
-                var logs = _loggerProvider.GetAllLogMessages().Select(p => p.FormattedMessage).ToArray();
+                var logs = _loggerProvider.GetAllLogMessages().Where(m => m.Category.Equals(SyncManagerLogCategory)).Select(p => p.FormattedMessage).ToArray();
                 Assert.Equal("No functions found. Skipping Sync operation.", logs.Single());
             }
         }
@@ -328,7 +329,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Managment
                 Assert.Equal(64, hash.Length);
 
                 // verify log statements
-                var logMessages = _loggerProvider.GetAllLogMessages().Select(p => p.FormattedMessage).ToArray();
+                var logMessages = _loggerProvider.GetAllLogMessages().Where(m => m.Category.Equals(SyncManagerLogCategory)).Select(p => p.FormattedMessage).ToArray();
                 Assert.True(logMessages[0].StartsWith("Making SyncTriggers request"));
                 var startIdx = logMessages[0].IndexOf("Content=") + 8;
                 var endIdx = logMessages[0].LastIndexOf(')');
@@ -350,7 +351,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Managment
                 Assert.True(syncResult.Success);
                 Assert.Null(syncResult.Error);
 
-                logMessages = _loggerProvider.GetAllLogMessages().Select(p => p.FormattedMessage).ToArray();
+                logMessages = _loggerProvider.GetAllLogMessages().Where(m => m.Category.Equals(SyncManagerLogCategory)).Select(p => p.FormattedMessage).ToArray();
                 Assert.Equal(1, logMessages.Length);
                 Assert.Equal($"SyncTriggers hash (Last='{hash}', Current='{hash}')", logMessages[0]);
 
@@ -388,7 +389,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Managment
                 Assert.False(hashBlobExists);
 
                 // verify log statements
-                var logMessages = _loggerProvider.GetAllLogMessages().Select(p => p.FormattedMessage).ToArray();
+                var logMessages = _loggerProvider.GetAllLogMessages().Where(m => m.Category.Equals(SyncManagerLogCategory)).Select(p => p.FormattedMessage).ToArray();
                 Assert.True(logMessages[0].Contains("Content="));
                 Assert.Equal(expectedErrorMessage, logMessages[1]);
             }
@@ -557,7 +558,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests.Managment
 
         private void VerifyLoggedInvalidOperationException(string errorMessage)
         {
-            Exception[] messages = _loggerProvider.GetAllLogMessages().Where(p => p.Level == LogLevel.Error).Select(p => p.Exception).ToArray();
+            Exception[] messages = _loggerProvider.GetAllLogMessages().Where(m => m.Category.Equals(SyncManagerLogCategory)).Where(p => p.Level == LogLevel.Error).Select(p => p.Exception).ToArray();
             Assert.Equal(1, messages.Length);
             Assert.True(messages[0] is InvalidOperationException);
             Assert.Equal(errorMessage, messages[0].Message);

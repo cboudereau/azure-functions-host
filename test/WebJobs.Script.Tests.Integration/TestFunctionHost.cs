@@ -87,8 +87,9 @@ namespace Microsoft.Azure.WebJobs.Script.Tests
                       {
                           var montior = sp.GetService<IOptionsMonitor<ScriptApplicationHostOptions>>();
                           var scriptManager = sp.GetService<IScriptHostManager>();
+                          var loggerFactory = sp.GetService<ILoggerFactory>();
 
-                          return GetMetadataManager(montior, scriptManager);
+                          return GetMetadataManager(montior, scriptManager, loggerFactory);
                       }, ServiceLifetime.Singleton));
 
                       // Allows us to configure services as the last step, thereby overriding anything
@@ -320,7 +321,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests
             }
         }
 
-        private FunctionMetadataManager GetMetadataManager(IOptionsMonitor<ScriptApplicationHostOptions> optionsMonitor, IScriptHostManager manager)
+        private FunctionMetadataManager GetMetadataManager(IOptionsMonitor<ScriptApplicationHostOptions> optionsMonitor, IScriptHostManager manager, ILoggerFactory factory)
         {
             var workerOptions = new LanguageWorkerOptions
             {
@@ -330,7 +331,7 @@ namespace Microsoft.Azure.WebJobs.Script.Tests
             var managerServiceProvider = manager as IServiceProvider;
 
             var metadataProvider = new FunctionMetadataProvider(optionsMonitor, new OptionsWrapper<LanguageWorkerOptions>(workerOptions), NullLogger<FunctionMetadataProvider>.Instance, new TestMetricsLogger());
-            var metadataManager = new FunctionMetadataManager(managerServiceProvider.GetService<IOptions<ScriptJobHostOptions>>(), metadataProvider, managerServiceProvider.GetService<IEnumerable<IFunctionProvider>>(), managerServiceProvider.GetService<IOptions<HttpWorkerOptions>>(), manager, new NullLoggerFactory());
+            var metadataManager = new FunctionMetadataManager(managerServiceProvider.GetService<IOptions<ScriptJobHostOptions>>(), metadataProvider, managerServiceProvider.GetService<IEnumerable<IFunctionProvider>>(), managerServiceProvider.GetService<IOptions<HttpWorkerOptions>>(), manager, factory);
 
             return metadataManager;
         }
